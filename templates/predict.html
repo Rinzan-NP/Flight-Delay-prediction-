@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Delays - Flight Delay Prediction System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="fas fa-crystal-ball"></i> Flight Delay Prediction
+                </h1>
+                <p class="lead text-muted">Enter flight details below to get a delay prediction</p>
+            </div>
+
+            <!-- Prediction Form -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-plane"></i> Flight Information</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form id="predictionForm" novalidate>
+                        <div class="row g-3">
+                            <!-- Date & Time Information -->
+                            <div class="col-md-6">
+                                <label for="year" class="form-label">Year</label>
+                                <select class="form-select" id="year" required>
+                                    <option value="">Select Year</option>
+                                    <option value="2018">2018</option>
+                                    <option value="2019">2019</option>
+                                    <option value="2020">2020</option>
+                                    <option value="2021">2021</option>
+                                    <option value="2022">2022</option>
+                                    <option value="2023">2023</option>
+                                    <option value="2024" selected>2024</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="quarter" class="form-label">Quarter</label>
+                                <select class="form-select" id="quarter" required>
+                                    <option value="">Select Quarter</option>
+                                    <option value="1" selected>Q1 (Jan-Mar)</option>
+                                    <option value="2">Q2 (Apr-Jun)</option>
+                                    <option value="3">Q3 (Jul-Sep)</option>
+                                    <option value="4">Q4 (Oct-Dec)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="month" class="form-label">Month</label>
+                                <select class="form-select" id="month" required>
+                                    <option value="">Select Month</option>
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3" selected>March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="day_of_month" class="form-label">Day of Month</label>
+                                <input type="number" class="form-control" id="day_of_month" min="1" max="31" value="15" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="day_of_week" class="form-label">Day of Week</label>
+                                <select class="form-select" id="day_of_week" required>
+                                    <option value="">Select Day</option>
+                                    <option value="1">Monday</option>
+                                    <option value="2">Tuesday</option>
+                                    <option value="3">Wednesday</option>
+                                    <option value="4">Thursday</option>
+                                    <option value="5" selected>Friday</option>
+                                    <option value="6">Saturday</option>
+                                    <option value="7">Sunday</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="crs_dep_time" class="form-label">Scheduled Departure Time</label>
+                                <input type="number" class="form-control" id="crs_dep_time" 
+                                       placeholder="e.g., 800 for 8:00 AM" min="0" max="2359" value="800" required>
+                                <div class="form-text">Enter time in 24-hour format (e.g., 800 for 8:00 AM, 1400 for 2:00 PM)</div>
+                            </div>
+
+                            <!-- Airline & Airport Information -->
+                            <div class="col-md-6">
+                                <label for="reporting_airline" class="form-label">Reporting Airline</label>
+                                <select class="form-select" id="reporting_airline" required>
+                                    <option value="">Select Airline</option>
+                                    <option value="1" selected>American Airlines</option>
+                                    <option value="2">Delta Air Lines</option>
+                                    <option value="3">United Airlines</option>
+                                    <option value="4">Southwest Airlines</option>
+                                    <option value="5">JetBlue Airways</option>
+                                    <option value="6">Alaska Airlines</option>
+                                    <option value="7">Spirit Airlines</option>
+                                    <option value="8">Frontier Airlines</option>
+                                    <option value="9">Hawaiian Airlines</option>
+                                    <option value="10">Virgin America</option>
+                                    <option value="11">Allegiant Air</option>
+                                    <option value="12">Sun Country Airlines</option>
+                                    <option value="13">Republic Airways</option>
+                                    <option value="14">Mesa Airlines</option>
+                                    <option value="15">SkyWest Airlines</option>
+                                    <option value="16">Envoy Air</option>
+                                    <option value="17">PSA Airlines</option>
+                                    <option value="18">Piedmont Airlines</option>
+                                    <option value="19">GoJet Airlines</option>
+                                    <option value="20">Compass Airlines</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="origin" class="form-label">Origin Airport</label>
+                                <select class="form-select" id="origin" required>
+                                    <option value="">Select Origin Airport</option>
+                                    {% for i in range(1, 51) %}
+                                    <option value="{{ i }}" {% if i == 10 %}selected{% endif %}>Airport {{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="origin_state" class="form-label">Origin State</label>
+                                <select class="form-select" id="origin_state" required>
+                                    <option value="">Select Origin State</option>
+                                    {% for i in range(1, 51) %}
+                                    <option value="{{ i }}" {% if i == 10 %}selected{% endif %}>State {{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="dest" class="form-label">Destination Airport</label>
+                                <select class="form-select" id="dest" required>
+                                    <option value="">Select Destination Airport</option>
+                                    {% for i in range(1, 51) %}
+                                    <option value="{{ i }}" {% if i == 20 %}selected{% endif %}>Airport {{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="dest_state" class="form-label">Destination State</label>
+                                <select class="form-select" id="dest_state" required>
+                                    <option value="">Select Destination State</option>
+                                    {% for i in range(1, 51) %}
+                                    <option value="{{ i }}" {% if i == 20 %}selected{% endif %}>State {{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Flight Details -->
+                            <div class="col-md-6">
+                                <label for="distance" class="form-label">Distance (miles)</label>
+                                <input type="number" class="form-control" id="distance" min="50" max="3000" value="500" required>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="air_time" class="form-label">Air Time (minutes)</label>
+                                <input type="number" class="form-control" id="air_time" min="30" max="500" value="120" required>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-crystal-ball"></i> Predict Delay
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-lg px-5 ms-2" onclick="testAPI()">
+                                <i class="fas fa-flask"></i> Test API
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Prediction Results -->
+            <div id="predictionResults" class="mt-5" style="display: none;">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="mb-0"><i class="fas fa-check-circle"></i> Prediction Results</h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div id="predictionStatus" class="text-center mb-4">
+                                    <!-- Prediction status will be inserted here -->
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="confidence-meter">
+                                    <h5>Confidence Level</h5>
+                                    <div class="progress mb-3" style="height: 25px;">
+                                        <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="metric-card">
+                                                <h6 class="text-success">No Delay</h6>
+                                                <h4 id="noDelayProb" class="text-success">0%</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="metric-card">
+                                                <h6 class="text-danger">Delay</h6>
+                                                <h4 id="delayProb" class="text-danger">0%</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    console.log('Form submitted');
+    alert('Form submitted - checking if this works');
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Predicting...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Collect form data
+        const formData = {
+            year: parseInt(document.getElementById('year').value),
+            quarter: parseInt(document.getElementById('quarter').value),
+            month: parseInt(document.getElementById('month').value),
+            day_of_month: parseInt(document.getElementById('day_of_month').value),
+            day_of_week: parseInt(document.getElementById('day_of_week').value),
+            reporting_airline: parseInt(document.getElementById('reporting_airline').value),
+            origin: parseInt(document.getElementById('origin').value),
+            origin_state: parseInt(document.getElementById('origin_state').value),
+            dest: parseInt(document.getElementById('dest').value),
+            dest_state: parseInt(document.getElementById('dest_state').value),
+            crs_dep_time: parseInt(document.getElementById('crs_dep_time').value),
+            distance: parseInt(document.getElementById('distance').value),
+            air_time: parseInt(document.getElementById('air_time').value)
+        };
+        
+        console.log('Form data:', formData);
+        
+        // Validate form data
+        for (const [key, value] of Object.entries(formData)) {
+            if (isNaN(value) || value === null || value === undefined) {
+                throw new Error(`Invalid value for ${key}: ${value}`);
+            }
+        }
+        
+        // Make API call
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            throw new Error(`API Error (${response.status}): ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('Prediction result:', result);
+        
+        // Display results
+        displayResults(result);
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error making prediction: ' + error.message);
+    } finally {
+        // Reset button
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+});
+
+function displayResults(result) {
+    const resultsDiv = document.getElementById('predictionResults');
+    const statusDiv = document.getElementById('predictionStatus');
+    const confidenceBar = document.getElementById('confidenceBar');
+    const noDelayProb = document.getElementById('noDelayProb');
+    const delayProb = document.getElementById('delayProb');
+    
+    // Update prediction status
+    if (result.prediction === 0) {
+        statusDiv.innerHTML = `
+            <div class="prediction-success">
+                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                <h2 class="text-success">No Delay Predicted</h2>
+                <p class="text-muted">Your flight is likely to depart on time</p>
+            </div>
+        `;
+        confidenceBar.className = 'progress-bar bg-success';
+    } else {
+        statusDiv.innerHTML = `
+            <div class="prediction-warning">
+                <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                <h2 class="text-warning">Delay Predicted</h2>
+                <p class="text-muted">Your flight may experience delays</p>
+            </div>
+        `;
+        confidenceBar.className = 'progress-bar bg-warning';
+    }
+    
+    // Update confidence meter
+    const confidence = Math.round(result.confidence * 100);
+    confidenceBar.style.width = confidence + '%';
+    confidenceBar.textContent = confidence + '%';
+    
+    // Update probabilities
+    noDelayProb.textContent = Math.round(result.no_delay_prob * 100) + '%';
+    delayProb.textContent = Math.round(result.delay_prob * 100) + '%';
+    
+    // Show results
+    resultsDiv.style.display = 'block';
+    resultsDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+// Test API function
+async function testAPI() {
+    console.log('Testing API directly...');
+    
+    const testData = {
+        year: 2024,
+        quarter: 1,
+        month: 3,
+        day_of_month: 15,
+        day_of_week: 5,
+        reporting_airline: 1,
+        origin: 10,
+        origin_state: 10,
+        dest: 20,
+        dest_state: 20,
+        crs_dep_time: 800,
+        distance: 500,
+        air_time: 120
+    };
+    
+    try {
+        console.log('Sending test data:', testData);
+        
+        const response = await fetch('/api/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            alert('API Error: ' + errorText);
+            return;
+        }
+        
+        const result = await response.json();
+        console.log('Test API result:', result);
+        alert('Test API Success! Prediction: ' + (result.prediction === 0 ? 'No Delay' : 'Delay'));
+        
+        // Display results
+        displayResults(result);
+        
+    } catch (error) {
+        console.error('Test API Error:', error);
+        alert('Test API Error: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
