@@ -4,15 +4,14 @@ A comprehensive machine learning application for predicting flight delays using 
 
 ## 📁 Project Structure
 
-The project is organized into modular components for better maintainability:
+The project contains the following files:
 
 ```
-├── flight_delay_logic.py    # ML models and data processing logic
-├── flight_delay_ui.py       # Streamlit UI components and pages
-├── app_main.py             # Main entry point
-├── app.py                  # Legacy single-file version (can be removed)
+├── app.py                  # Main Streamlit application with all functionality
 ├── requirements.txt        # Python dependencies
 ├── finished.csv           # Flight delay dataset
+├── notebooke7394a32f4 (2).ipynb  # Jupyter notebook (development/testing)
+├── __pycache__/           # Python cache files (auto-generated)
 └── README.md              # This file
 ```
 
@@ -27,7 +26,7 @@ pip install -r requirements.txt
 ### 2. Run the Application
 
 ```bash
-streamlit run app_main.py
+streamlit run app.py
 ```
 
 The application will open in your browser at `http://localhost:8501`
@@ -96,21 +95,17 @@ The system provides comprehensive evaluation metrics:
 
 ## 🛠️ Technical Architecture
 
-### Logic Module (`flight_delay_logic.py`)
-Contains all machine learning and data processing functions:
+### Main Application (`app.py`)
+The application is built as a single comprehensive Streamlit file containing:
 
-- **Data Loading**: Efficient CSV loading with sampling for large datasets
+- **Data Loading**: Efficient CSV loading with sampling for large datasets (50,000 records max)
 - **Feature Preprocessing**: Date conversion, scaling, and encoding
-- **Model Training**: Automated training of multiple ML models
+- **Model Training**: Automated training of multiple ML models (Logistic Regression, Decision Tree, Random Forest)
 - **Prediction Engine**: Real-time prediction with confidence scoring
 - **Evaluation**: Comprehensive model performance assessment
-
-### UI Module (`flight_delay_ui.py`)
-Contains all Streamlit interface components:
-
-- **Page Management**: Modular page system with navigation
+- **UI Components**: Modular page system with navigation
 - **Styling**: Custom CSS for blue and white theme
-- **Visualizations**: Interactive charts and graphs
+- **Visualizations**: Interactive charts and graphs using Plotly
 - **User Experience**: Responsive design and loading indicators
 
 ## 📊 Dataset Requirements
@@ -182,16 +177,16 @@ The application expects a CSV file named `finished.csv` with the following struc
 
 ### Adding New Features
 
-1. **Logic Module**: Add new ML models or preprocessing steps
-2. **UI Module**: Add new pages or visualization components
-3. **Integration**: Update imports and function calls as needed
+1. **Main Application**: Add new ML models or preprocessing steps directly in `app.py`
+2. **UI Components**: Add new pages or visualization components in the main file
+3. **Integration**: Update function calls and imports as needed
 
 ### Code Structure
 
 - **Functions**: Well-documented functions with clear parameters and returns
-- **Comments**: Comprehensive inline documentation
+- **Comments**: Comprehensive inline documentation for each function
 - **Error Handling**: Robust error handling with user-friendly messages
-- **Modularity**: Separate concerns between logic and presentation
+- **Modularity**: Organized into logical function groups within the single file
 
 ## 📄 License
 

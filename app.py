@@ -154,24 +154,70 @@ st.markdown("""
 
 @st.cache_data
 def load_data():
-    """Load the flight delay dataset"""
+    """
+    Load the flight delay dataset from CSV file.
+    
+    This function loads the flight delay dataset, applies sampling for performance optimization,
+    and handles various error conditions gracefully.
+    
+    Returns:
+        pd.DataFrame: Sampled flight delay dataset (max 50,000 records)
+        None: If file not found or error occurs
+        
+    Features:
+        - Automatic sampling for large datasets (performance optimization)
+        - Error handling for missing files and data loading issues
+        - Streamlit caching for improved performance
+        - Random state for reproducible results
+    """
     try:
+        # Load the CSV file containing flight delay data
         data = pd.read_csv('finished.csv')
-        # Use a sample for faster processing
+        
+        # Use a sample for faster processing - limit to 50,000 records for performance
+        # This ensures the app runs smoothly even with very large datasets
         data_sample = data.sample(n=min(50000, len(data)), random_state=42)
         return data_sample
+        
     except FileNotFoundError:
+        # Handle case where the dataset file is missing
         st.error("Dataset 'finished.csv' not found. Please make sure the file is in the same directory.")
         return None
+        
     except Exception as e:
+        # Handle any other data loading errors
         st.error(f"Error loading dataset: {str(e)}")
         return None
 
 @st.cache_resource
 def create_all_models(data):
-    """Create and train all models with dynamic metrics"""
+    """
+    Create and train multiple machine learning models for flight delay prediction.
+    
+    This function preprocesses the data, trains three different ML models (Logistic Regression,
+    Decision Tree, and Random Forest), and calculates comprehensive performance metrics.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Returns:
+        tuple: (main_model, scaler, feature_columns, results, X_train, X_test, y_train, y_test)
+            - main_model: Random Forest model for predictions
+            - scaler: MinMaxScaler for feature scaling
+            - feature_columns: List of feature column names
+            - results: Dictionary containing all model results and metrics
+            - X_train, X_test, y_train, y_test: Training and testing datasets
+            
+    Features:
+        - Data preprocessing with date handling and feature scaling
+        - Training of three different ML algorithms
+        - Comprehensive performance metrics calculation
+        - Error handling for data processing issues
+        - Streamlit caching for improved performance
+    """
     try:
         # Use a smaller sample for faster training (first 10000 rows)
+        # This balances training speed with model performance
         data_sample = data.head(10000).copy()
         
         # Handle date column - convert to numeric or drop
@@ -181,61 +227,65 @@ def create_all_models(data):
         date_columns = []
         for col in data_processed.columns:
             if data_processed[col].dtype == 'object':
-                # Check if it looks like a date
+                # Check if it looks like a date by attempting to parse the first value
                 try:
                     pd.to_datetime(data_processed[col].iloc[0])
                     date_columns.append(col)
                 except:
                     pass
         
-        # Remove date columns or convert them
+        # Remove date columns or convert them to numeric format
         for col in date_columns:
             if col in data_processed.columns:
-                # Convert date to numeric (days since epoch)
+                # Convert date to numeric (seconds since epoch for compatibility)
                 data_processed[col] = pd.to_datetime(data_processed[col]).astype('int64') // 10**9
         
         # Prepare features and target - exclude non-numeric columns
         numeric_columns = data_processed.select_dtypes(include=[np.number]).columns.tolist()
         
-        # Remove target columns from features
+        # Remove target columns from features to avoid data leakage
         feature_columns = [col for col in numeric_columns if col not in ['is_delay', 'ArrDelay']]
         
+        # Separate features (X) and target variable (y)
         X = data_processed[feature_columns]
         y = data_processed['is_delay']
         
-        # Handle any remaining NaN values
+        # Handle any remaining NaN values using median imputation
         X = X.fillna(X.median())
         y = y.fillna(0)
         
-        # Scale features
+        # Scale features using MinMaxScaler for consistent feature ranges
         scaler = MinMaxScaler()
         X_scaled = scaler.fit_transform(X)
         
-        # Split data
+        # Split data into training and testing sets with stratification
         X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=23, stratify=y)
         
-        # Train all models
+        # Import required models
         from sklearn.linear_model import LogisticRegression
         from sklearn.tree import DecisionTreeClassifier
         
+        # Define models with optimized parameters
         models = {
             'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
             'Decision Tree': DecisionTreeClassifier(random_state=42),
             'Random Forest': RandomForestClassifier(n_estimators=50, random_state=42, n_jobs=-1)
         }
         
+        # Train all models and calculate performance metrics
         results = {}
         for name, model in models.items():
+            # Train the model
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
             
-            # Calculate comprehensive metrics
+            # Calculate comprehensive metrics for model evaluation
             accuracy = accuracy_score(y_test, y_pred)
             precision = precision_score(y_test, y_pred, average='weighted')
             recall = recall_score(y_test, y_pred, average='weighted')
             f1 = f1_score(y_test, y_pred, average='weighted')
             
-            # Additional metrics
+            # Additional metrics for comprehensive evaluation
             mse = mean_squared_error(y_test, y_pred)
             mae = mean_absolute_error(y_test, y_pred)
             
@@ -252,6 +302,7 @@ def create_all_models(data):
             except:
                 roc_auc = 0.0
             
+            # Store all results for this model
             results[name] = {
                 'model': model,
                 'accuracy': accuracy,
@@ -265,16 +316,31 @@ def create_all_models(data):
                 'predictions': y_pred
             }
         
-        # Use Random Forest as the main model for predictions
+        # Use Random Forest as the main model for predictions (typically best performance)
         main_model = results['Random Forest']['model']
         
         return main_model, scaler, feature_columns, results, X_train, X_test, y_train, y_test
+        
     except Exception as e:
+        # Handle any errors during model creation
         st.error(f"Error creating models: {str(e)}")
         return None, None, None, None, None, None, None, None
 
 def main():
-    # Header
+    """
+    Main function that initializes the Streamlit application and handles navigation.
+    
+    This function sets up the application header, loads the dataset, creates the navigation
+    sidebar, and routes users to the appropriate page based on their selection.
+    
+    Features:
+        - Application header with title and description
+        - Data loading and validation
+        - Sidebar navigation menu
+        - Page routing system
+        - Error handling for missing data
+    """
+    # Display application header with styling
     st.markdown("""
     <div class="main-header">
         <h1>✈️ Flight Delay Prediction System</h1>
@@ -282,22 +348,23 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Load data
+    # Load the flight delay dataset
     data = load_data()
     if data is None:
+        # If data loading fails, exit the application
         return
     
-    # Create sidebar navigation
+    # Create sidebar navigation menu
     st.sidebar.markdown("### 🧭 Navigation")
     page = st.sidebar.selectbox("Choose a page", [
-        "🏠 Home", 
-        "🔮 Predict Delays", 
-        "📊 Data Analysis", 
-        "🤖 Model Performance",
-        "📈 Visualizations"
+        "🏠 Home",           # Dashboard with key metrics and overview
+        "🔮 Predict Delays", # Interactive prediction interface
+        "📊 Data Analysis",  # Statistical analysis and insights
+        "🤖 Model Performance", # Model comparison and metrics
+        "📈 Visualizations"  # Interactive charts and graphs
     ])
     
-    # Display selected page
+    # Route to the appropriate page based on user selection
     if page == "🏠 Home":
         show_home_page(data)
     elif page == "🔮 Predict Delays":
@@ -310,6 +377,23 @@ def main():
         show_visualizations_page(data)
 
 def show_home_page(data):
+    """
+    Display the home page with key metrics, statistics, and feature overview.
+    
+    This function creates the main dashboard showing important statistics about the dataset,
+    model performance, and key features of the application.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Features:
+        - Welcome message and system overview
+        - Key performance metrics (total flights, delay rate, model accuracy, processing time)
+        - Feature highlights and capabilities
+        - Dynamic metric calculations
+        - Responsive card-based layout
+    """
+    # Display welcome message and system description
     st.markdown("""
     <div class="info-card">
         <h2 style="color: #1f4e79;">🎯 Welcome to Flight Delay Prediction System</h2>
@@ -320,10 +404,11 @@ def show_home_page(data):
     </div>
     """, unsafe_allow_html=True)
     
-    # Key statistics
+    # Display key statistics in a 4-column layout
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
+        # Display total number of flights in the dataset
         st.markdown(f"""
         <div class="metric-card">
             <h3 style="color: #1f4e79;">📊 Total Flights</h3>
@@ -333,6 +418,7 @@ def show_home_page(data):
         """, unsafe_allow_html=True)
     
     with col2:
+        # Calculate and display the overall delay rate percentage
         delay_rate = (data['is_delay'].sum() / len(data) * 100)
         st.markdown(f"""
         <div class="metric-card">
@@ -343,11 +429,12 @@ def show_home_page(data):
         """, unsafe_allow_html=True)
     
     with col3:
-        # Get dynamic model accuracy
+        # Calculate and display dynamic model accuracy
         with st.spinner("Calculating model accuracy..."):
             model, scaler, feature_columns, results, X_train, X_test, y_train, y_test = create_all_models(data)
         
         if model is not None:
+            # Find the best accuracy among all trained models
             best_accuracy = max([results[model]['accuracy'] for model in results.keys()]) * 100
             st.markdown(f"""
             <div class="metric-card">
@@ -357,6 +444,7 @@ def show_home_page(data):
             </div>
             """, unsafe_allow_html=True)
         else:
+            # Display loading state if model creation fails
             st.markdown(f"""
             <div class="metric-card">
                 <h3 style="color: #1f4e79;">🎯 Model Accuracy</h3>
@@ -366,10 +454,10 @@ def show_home_page(data):
             """, unsafe_allow_html=True)
     
     with col4:
-        # Measure actual processing time
+        # Measure and display actual processing time for predictions
         import time
         start_time = time.time()
-        # Quick prediction to measure time
+        # Perform a quick prediction to measure processing time
         if model is not None:
             dummy_input = np.zeros((1, len(feature_columns)))
             model.predict(dummy_input)
@@ -420,6 +508,24 @@ def show_home_page(data):
         """, unsafe_allow_html=True)
 
 def show_prediction_page(data):
+    """
+    Display the prediction page with interactive form for flight delay prediction.
+    
+    This function creates an interactive interface where users can input flight details
+    and receive real-time delay predictions with confidence scores.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Features:
+        - Interactive input form for flight parameters
+        - Real-time prediction with confidence scores
+        - Visual confidence meter using Plotly
+        - Detailed probability breakdown
+        - Error handling for prediction failures
+        - User-friendly result display
+    """
+    # Display page header and description
     st.markdown("""
     <div class="info-card">
         <h2 style="color: #1f4e79;">🔮 Flight Delay Prediction</h2>
@@ -557,6 +663,24 @@ def show_prediction_page(data):
             st.metric("Delay Probability", f"{prediction_proba[1]*100:.1f}%")
 
 def show_analysis_page(data):
+    """
+    Display the data analysis page with comprehensive flight delay insights.
+    
+    This function provides detailed statistical analysis of the flight delay dataset,
+    including time-based patterns, airline performance, and route analysis.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Features:
+        - Dataset overview with key statistics
+        - Time-based delay analysis (monthly, daily patterns)
+        - Airline performance comparison
+        - Route and distance analysis
+        - Interactive charts and visualizations
+        - Sample data display
+    """
+    # Display page header and description
     st.markdown("""
     <div class="info-card">
         <h2 style="color: #1f4e79;">📊 Flight Data Analysis</h2>
@@ -653,6 +777,24 @@ def show_analysis_page(data):
     st.plotly_chart(fig, use_container_width=True)
 
 def show_performance_page(data):
+    """
+    Display the model performance page with comprehensive evaluation metrics.
+    
+    This function provides detailed analysis of all trained machine learning models,
+    including performance comparison, feature importance, and evaluation metrics.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Features:
+        - Model performance comparison table
+        - Interactive performance charts
+        - Feature importance analysis
+        - Comprehensive evaluation metrics
+        - Best model identification
+        - Detailed metric explanations
+    """
+    # Display page header and description
     st.markdown("""
     <div class="info-card">
         <h2 style="color: #1f4e79;">🤖 Model Performance Analysis</h2>
@@ -817,6 +959,23 @@ def show_performance_page(data):
                 st.metric("MAE", f"{results[model_name]['mae']:.4f}")
 
 def show_visualizations_page(data):
+    """
+    Display the visualizations page with interactive charts and graphs.
+    
+    This function creates various interactive visualizations to explore flight delay
+    patterns, including correlation analysis, distribution plots, and temporal patterns.
+    
+    Args:
+        data (pd.DataFrame): Flight delay dataset
+        
+    Features:
+        - Feature correlation heatmap
+        - Distribution analysis charts
+        - Temporal delay patterns
+        - Interactive Plotly visualizations
+        - Multi-dimensional data exploration
+    """
+    # Display page header and description
     st.markdown("""
     <div class="info-card">
         <h2 style="color: #1f4e79;">📈 Interactive Visualizations</h2>
