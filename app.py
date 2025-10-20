@@ -1063,3 +1063,4 @@ def show_visualizations_page(data):
 
 if __name__ == "__main__":
     main()
+ 
