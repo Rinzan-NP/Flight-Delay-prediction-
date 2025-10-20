@@ -188,14 +188,4 @@ The application expects a CSV file named `finished.csv` with the following struc
 - **Error Handling**: Robust error handling with user-friendly messages
 - **Modularity**: Organized into logical function groups within the single file
 
-## 📄 License
 
-This project is open source and available under the MIT License.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-## 📞 Support
-
-For support or questions, please open an issue in the project repository.
